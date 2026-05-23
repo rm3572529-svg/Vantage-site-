@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
   GetUserParams,
   UpdateUserParams,
@@ -16,7 +16,13 @@ router.get("/:uid", async (req, res) => {
   const { uid } = req.params;
   let [user] = await db.select().from(usersTable).where(eq(usersTable.uid, uid));
   if (!user) {
-    // Auto-create on first access
+    // Check if any admin exists — if not, make this the first admin
+    const [{ count }] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(usersTable)
+      .where(eq(usersTable.role, "admin"));
+    const isFirstAdmin = count === 0;
+
     [user] = await db
       .insert(usersTable)
       .values({
@@ -24,9 +30,9 @@ router.get("/:uid", async (req, res) => {
         email: "",
         displayName: null,
         photoURL: null,
-        role: "user",
+        role: isFirstAdmin ? "admin" : "user",
         linksUsed: 0,
-        linksLimit: 25,
+        linksLimit: isFirstAdmin ? 9999 : 25,
         tasksCompleted: [],
       })
       .returning();

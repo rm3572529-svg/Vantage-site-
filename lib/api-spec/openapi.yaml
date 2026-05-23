@@ -1,0 +1,514 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Vantage Download Site API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: links
+    description: Link management
+  - name: users
+    description: User management
+  - name: analytics
+    description: Analytics
+  - name: admin
+    description: Admin operations
+  - name: settings
+    description: Site settings
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /links:
+    get:
+      operationId: getLinks
+      tags: [links]
+      summary: Get user's generated links
+      parameters:
+        - name: uid
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Link"
+    post:
+      operationId: createLink
+      tags: [links]
+      summary: Create a new download link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkInput"
+      responses:
+        "201":
+          description: Created link
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Link"
+
+  /links/{id}:
+    get:
+      operationId: getLink
+      tags: [links]
+      summary: Get a link by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Link details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Link"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteLink
+      tags: [links]
+      summary: Delete a link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /links/{id}/download:
+    post:
+      operationId: recordDownload
+      tags: [links]
+      summary: Record a download event
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DownloadEvent"
+      responses:
+        "200":
+          description: Recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Link"
+
+  /links/{id}/report:
+    post:
+      operationId: reportLink
+      tags: [links]
+      summary: Report a link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportInput"
+      responses:
+        "200":
+          description: Reported
+
+  /users/{uid}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user profile
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update user profile
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{uid}/complete-task:
+    post:
+      operationId: completeTask
+      tags: [users]
+      summary: Mark a social task as completed
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskCompletion"
+      responses:
+        "200":
+          description: Task completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /analytics/summary:
+    get:
+      operationId: getAnalyticsSummary
+      tags: [analytics]
+      summary: Get analytics summary
+      responses:
+        "200":
+          description: Analytics summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsSummary"
+
+  /analytics/popular:
+    get:
+      operationId: getPopularLinks
+      tags: [analytics]
+      summary: Get most popular links
+      responses:
+        "200":
+          description: Popular links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Link"
+
+  /admin/users:
+    get:
+      operationId: adminGetUsers
+      tags: [admin]
+      summary: Admin - get all users
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /admin/links:
+    get:
+      operationId: adminGetLinks
+      tags: [admin]
+      summary: Admin - get all links
+      responses:
+        "200":
+          description: All links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Link"
+
+  /admin/links/{id}:
+    delete:
+      operationId: adminDeleteLink
+      tags: [admin]
+      summary: Admin - delete any link
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+
+  /admin/users/{uid}/role:
+    patch:
+      operationId: adminUpdateRole
+      tags: [admin]
+      summary: Admin - update user role
+      parameters:
+        - name: uid
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleUpdate"
+      responses:
+        "200":
+          description: Updated
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get site settings
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettings"
+    patch:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Admin - update site settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SiteSettingsUpdate"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteSettings"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    Link:
+      type: object
+      required: [id, uid, originalUrl, directUrl, shortCode, fileName, fileType, downloads, createdAt]
+      properties:
+        id:
+          type: string
+        uid:
+          type: string
+        originalUrl:
+          type: string
+        directUrl:
+          type: string
+        shortCode:
+          type: string
+        fileName:
+          type: string
+        fileType:
+          type: string
+        fileSize:
+          type: ["string", "null"]
+        downloads:
+          type: integer
+        createdAt:
+          type: string
+        reported:
+          type: boolean
+
+    LinkInput:
+      type: object
+      required: [uid, originalUrl]
+      properties:
+        uid:
+          type: string
+        originalUrl:
+          type: string
+        customSlug:
+          type: ["string", "null"]
+
+    DownloadEvent:
+      type: object
+      required: [device]
+      properties:
+        device:
+          type: string
+        country:
+          type: ["string", "null"]
+
+    ReportInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    User:
+      type: object
+      required: [uid, email, role, linksUsed, linksLimit, tasksCompleted, createdAt]
+      properties:
+        uid:
+          type: string
+        email:
+          type: string
+        displayName:
+          type: ["string", "null"]
+        photoURL:
+          type: ["string", "null"]
+        role:
+          type: string
+        linksUsed:
+          type: integer
+        linksLimit:
+          type: integer
+        tasksCompleted:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        displayName:
+          type: string
+        photoURL:
+          type: string
+
+    TaskCompletion:
+      type: object
+      required: [task]
+      properties:
+        task:
+          type: string
+
+    RoleUpdate:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+
+    AnalyticsSummary:
+      type: object
+      required: [totalLinks, totalDownloads, totalUsers, todayDownloads, todayVisitors]
+      properties:
+        totalLinks:
+          type: integer
+        totalDownloads:
+          type: integer
+        totalUsers:
+          type: integer
+        todayDownloads:
+          type: integer
+        todayVisitors:
+          type: integer
+        deviceBreakdown:
+          type: object
+          additionalProperties:
+            type: integer
+        topFiles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Link"
+
+    SiteSettings:
+      type: object
+      required: [socialTaskEnabled, directDownloadEnabled, monetizationEnabled, youtubeLink, instagramLink, whatsappLink]
+      properties:
+        socialTaskEnabled:
+          type: boolean
+        directDownloadEnabled:
+          type: boolean
+        monetizationEnabled:
+          type: boolean
+        youtubeLink:
+          type: string
+        instagramLink:
+          type: string
+        whatsappLink:
+          type: string
+        adsensePublisherId:
+          type: ["string", "null"]
+
+    SiteSettingsUpdate:
+      type: object
+      properties:
+        socialTaskEnabled:
+          type: boolean
+        directDownloadEnabled:
+          type: boolean
+        monetizationEnabled:
+          type: boolean
+        youtubeLink:
+          type: string
+        instagramLink:
+          type: string
+        whatsappLink:
+          type: string
+        adsensePublisherId:
+          type: string

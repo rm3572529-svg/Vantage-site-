@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Vantage Download Site"
+version = "1.0.0"
+id = "artifacts/vantage"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25174
+
+[services.development]
+run = "pnpm --filter @workspace/vantage run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/vantage", "run", "build" ]
+publicDir = "artifacts/vantage/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25174"
+BASE_PATH = "/"
